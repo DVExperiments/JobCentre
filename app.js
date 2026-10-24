@@ -60,7 +60,7 @@
     const lm = L.labourAt(t), emp = L.employers().byId;
     const total = lm.vacancies.reduce((a, v) => a + v.open, 0);
     let h = head('Vacancies', num(total) + ' positions open at ' + num(lm.vacancies.length) + ' employers. Wages are in watts a week.', 'The Job Centre');
-    h += '<ul class="cards">' + lm.vacancies.slice(0, 90).map((v) => { const e = emp[v.id], w = L.SECTOR[e.sector].wage; return '<li class="card"><b>' + esc(e.titles[0].charAt(0).toUpperCase() + e.titles[0].slice(1)) + (e.titles.length > 1 ? ' and more' : '') + '</b><span>' + link('employer/' + e.id, esc(e.name)) + ', ' + esc(districtName(e.district)) + '</span><span>' + Math.round(w * 0.85 / 10) * 10 + ' to ' + Math.round(w * 1.4 / 10) * 10 + ' W a week</span><span class="open">' + v.open + ' open position' + (v.open === 1 ? '' : 's') + '</span></li>'; }).join('') + '</ul>';
+    h += '<ul class="cards">' + lm.vacancies.slice(0, 90).map((v) => { const e = emp[v.id], w = L.SECTOR[e.sector].wage; return '<li class="card"><b>' + esc(e.titles[0].charAt(0).toUpperCase() + e.titles[0].slice(1)) + (e.titles.length > 1 ? ' and more' : '') + '</b><span>' + link('employer/' + e.id, esc(nameOf(e, t))) + ', ' + esc(districtName(e.district)) + '</span><span>' + Math.round(w * 0.85 / 10) * 10 + ' to ' + Math.round(w * 1.4 / 10) * 10 + ' W a week</span><span class="open">' + v.open + ' open position' + (v.open === 1 ? '' : 's') + '</span></li>'; }).join('') + '</ul>';
     if (lm.vacancies.length > 90) h += '<p class="muted">And ' + num(lm.vacancies.length - 90) + ' more employers with smaller openings.</p>';
     return h;
   }
@@ -79,15 +79,17 @@
     return h;
   }
 
+  // a business premises may have changed hands: the Exchange knows who trades there now
+  const nameOf = (e, t) => { if (e.kind !== 'business' || !window.PixelUniverse.commerce) return e.name; const o = window.PixelUniverse.commerce.occupantAt(e.id, t); return o ? o.name : e.name; };
   // ---------------------------------------------------------------- employers
   function employers() {
     const t = now();
     if (t < L.start) return notYet();
     const lm = L.labourAt(t), emp = L.employers().byId;
     const rows = Object.keys(lm.head).map((id) => [emp[id], lm.head[id]]).sort((a, b) => b[1] - a[1]).slice(0, 60);
-    let h = head('Employers', num(Object.keys(lm.head).length) + ' employers in Pixel City: shops, offices, factories, warehouses, the port, the power stations and the city’s institutions. The largest:', 'The Job Centre');
+    let h = head('Employers', num(Object.keys(lm.head).length) + ' employers in Pixel City: shops, offices, the render industry, caches and haulage, the export buffer, the power stations and the city’s institutions. The largest:', 'The Job Centre');
     h += '<div class="table-wrap"><table class="data"><thead><tr><th>Employer</th><th>Sector</th><th>District</th><th class="n">Staff</th></tr></thead><tbody>' +
-      rows.map(([e, n]) => '<tr><td>' + link('employer/' + e.id, esc(e.name)) + '</td><td>' + esc(L.SECTOR[e.sector].label) + '</td><td>' + esc(districtName(e.district)) + '</td><td class="n">' + num(n) + '</td></tr>').join('') + '</tbody></table></div>';
+      rows.map(([e, n]) => '<tr><td>' + link('employer/' + e.id, esc(nameOf(e, t))) + '</td><td>' + esc(L.SECTOR[e.sector].label) + '</td><td>' + esc(districtName(e.district)) + '</td><td class="n">' + num(n) + '</td></tr>').join('') + '</tbody></table></div>';
     return h;
   }
   function employer(id) {
@@ -96,7 +98,7 @@
     const e = L.employers().byId[id];
     if (!e) return head('No such employer', link('employers', 'All employers') + '.');
     const staff = L.staffOf(id, t);
-    let h = head(esc(e.name), esc(L.SECTOR[e.sector].label) + ' in ' + esc(districtName(e.district)) + ' district. ' + num(staff.length) + ' staff' + (L.operating(e, t) ? '.' : ', though it has closed.'), link('employers', 'Employers'));
+    let h = head(esc(nameOf(e, t)), esc(L.SECTOR[e.sector].label) + ' in ' + esc(districtName(e.district)) + ' district. ' + num(staff.length) + ' staff' + (L.operating(e, t) ? '.' : ', though it has closed.'), link('employers', 'Employers'));
     h += '<dl class="facts">' + fact('Staff', num(staff.length)) + fact('Room for', num(e.capacity)) + fact('Usual wage', L.SECTOR[e.sector].wage + ' W', 'a week') + '</dl>';
     h += '<h2>Jobs here</h2><p>' + esc(e.titles.map((x) => x.charAt(0).toUpperCase() + x.slice(1)).join(', ')) + '.</p>';
     if (staff.length) h += '<h2>Staff</h2><ul class="tiles">' + staff.slice(0, 120).map((sid) => { const s = K.summary(sid, t), j = L.jobOf(sid, t); return '<li><a class="tile" href="' + AT + '#/worker/' + sid + '"><span class="sw" style="--c:' + s.color + ';--h:transparent"><i></i></span><b>' + esc(s.name) + '</b><span>' + esc(j.title || '') + '</span></a></li>'; }).join('') + '</ul>';
