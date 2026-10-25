@@ -25,7 +25,8 @@
   const head = (title, lede, kicker) => '<section class="page-head">' + (kicker ? '<p class="kicker">' + kicker + '</p>' : '') + '<h1>' + title + '</h1>' + (lede ? '<p class="lede">' + lede + '</p>' : '') + '</section>';
   const fact = (k, v, small) => '<div><dt>' + k + '</dt><dd>' + v + (small ? ' <small>' + small + '</small>' : '') + '</dd></div>';
   const census = (id) => 'https://dvexperiments.github.io/City/census.html' + AT + '#/resident/' + id;
-  const months = (ms) => { const m = Math.round(ms / (30.44 * DAY)); return m < 1 ? 'under a month' : m === 1 ? 'a month' : m < 24 ? m + ' months' : Math.round(m / 12) + ' years'; };
+  // how long, as a life is lived: under the Pixel Calendar a month of a pixel's life passes in about two and a half days
+  const months = (ms, t) => { const lc = K && K.lifeClock; if (lc && t !== undefined) ms = lc.toLife(t) - lc.toLife(t - ms); const m = Math.round(ms / (30.44 * DAY)); return m < 1 ? 'under a month' : m === 1 ? 'a month' : m < 24 ? m + ' months' : Math.round(m / 12) + ' years'; };
   const districtName = (d) => C.map(now()).districts[d].name;
 
   function notYet() {
@@ -74,7 +75,7 @@
     page = +page || 0;
     let h = head('The queue', num(lm.looking) + ' pixels are looking for work, longest waiting first.', 'The Job Centre');
     h += '<div class="table-wrap"><table class="data"><thead><tr><th>#</th><th>Resident</th><th>District</th><th>Waiting</th><th>Why</th></tr></thead><tbody>' +
-      lm.queue.slice(page * PAGE, page * PAGE + PAGE).map((x, i) => { const s = K.summary(x.id, t); return '<tr><td>' + (page * PAGE + i + 1) + '</td><td><span class="chip" style="--c:' + s.color + '"></span>' + link('worker/' + x.id, esc(s.name)) + ' <span class="muted">' + s.age + '</span></td><td>' + esc(s.districtName) + '</td><td>' + months(t - x.since) + '</td><td>' + esc(x.reason || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      lm.queue.slice(page * PAGE, page * PAGE + PAGE).map((x, i) => { const s = K.summary(x.id, t); return '<tr><td>' + (page * PAGE + i + 1) + '</td><td><span class="chip" style="--c:' + s.color + '"></span>' + link('worker/' + x.id, esc(s.name)) + ' <span class="muted">' + s.age + '</span></td><td>' + esc(s.districtName) + '</td><td>' + months(t - x.since, t) + '</td><td>' + esc(x.reason || '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
     h += '<p class="pager"><span>' + (page > 0 ? link('queue/' + (page - 1), 'Previous ' + PAGE) : '') + '</span><span>' + ((page + 1) * PAGE < lm.queue.length ? link('queue/' + (page + 1), 'Next ' + PAGE) : '') + '</span></p>';
     return h;
   }
